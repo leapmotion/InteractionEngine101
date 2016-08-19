@@ -6,7 +6,7 @@ public class BlockSpawner : MonoBehaviour {
   [Tooltip("A spawned block is instantiated randomly from this list.")]
   public GameObject[] _blockPrefabs;
 
-  public float DefaultBlockMass { get { return 0.01F; } }
+  public float DefaultBlockMass { get { return 0.5F; } }
 
   private List<GameObject> _blocks = new List<GameObject>();
 

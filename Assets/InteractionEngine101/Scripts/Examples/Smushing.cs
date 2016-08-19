@@ -75,9 +75,6 @@ public class Smushing : IE101Example {
     _cubes[cubeIdx].AddComponent<InteractionBehaviour>();
     _cubes[cubeIdx].AddComponent<InteractionSoundFX>();
 
-    // Tweak mass for more stack stability during smushing
-    _cubes[cubeIdx].GetComponent<Rigidbody>().mass = 15F * _story._blockSpawner.DefaultBlockMass;
-
     // Collision callbacks for success detection
     var collCallbacks = _cubes[cubeIdx].AddComponent<HandCollisionCallbacks>();
     collCallbacks.OnEnterCollisionWithHand += OnHandCollisionEnter;

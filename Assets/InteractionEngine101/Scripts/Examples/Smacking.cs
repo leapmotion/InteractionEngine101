@@ -14,6 +14,7 @@ public class Smacking : IE101Example {
   private IEnumerator _attemptFailedRoutine;
   private bool _waitingAfterAttempt = false;
   private bool _ammoTouchingBoard = false;
+  private bool _boardTouchingBase = false;
 
   #endregion
 
@@ -37,26 +38,28 @@ public class Smacking : IE101Example {
     _seesawBase.transform.position = Vector3.up * 0.16F + Vector3.forward * 0.2F;
     _seesawBase.AddComponent<InteractionBehaviour>();
     _seesawBase.AddComponent<InteractionSoundFX>();
-    _seesawBase.GetComponent<Rigidbody>().mass = 10F * _story._blockSpawner.DefaultBlockMass;
+    _seesawBase.GetComponent<Rigidbody>().mass = 0.2F * _story._blockSpawner.DefaultBlockMass;
 
     _seesawBoard = _story._blockSpawner.Spawn();
     _seesawBoard.transform.localScale = new Vector3(3.0F, 0.5F, 1.0F);
     _seesawBoard.transform.position = Vector3.up * 0.3F + Vector3.forward * 0.2F;
     _seesawBoard.AddComponent<InteractionBehaviour>();
     _seesawBoard.AddComponent<InteractionSoundFX>();
-    _seesawBoard.GetComponent<Rigidbody>().mass = 5F * _story._blockSpawner.DefaultBlockMass;
+    _seesawBoard.GetComponent<Rigidbody>().mass = 0.1F * _story._blockSpawner.DefaultBlockMass;
 
     _seesawAmmo = _story._blockSpawner.Spawn();
     _seesawAmmo.transform.localScale = new Vector3(0.5F, 0.5F, 0.5F);
     _seesawAmmo.transform.position = Vector3.up * 0.8F + Vector3.left * 0.12F + Vector3.forward * 0.2F;
     _seesawAmmo.AddComponent<InteractionBehaviour>();
     _seesawAmmo.AddComponent<InteractionSoundFX>();
-    _seesawAmmo.GetComponent<Rigidbody>().mass = 0.35F * _story._blockSpawner.DefaultBlockMass;
+    _seesawAmmo.GetComponent<Rigidbody>().mass = 0.007F * _story._blockSpawner.DefaultBlockMass;
 
     _seesawAmmo.AddComponent<HandCollisionCallbacks>().OnEnterCollisionWithOther += OnAmmoHitNonHand;
     _seesawAmmo.GetComponent<HandCollisionCallbacks>().OnExitCollisionWithOther += OnAmmoLeftNonHand;
 
-    _seesawBoard.AddComponent<HandCollisionCallbacks>().OnEnterCollisionWithHand += OnBoardHitHand;
+    _seesawBoard.AddComponent<HandCollisionCallbacks>().OnEnterCollisionWithHandWithVelocity += OnBoardHitHand;
+    _seesawBoard.GetComponent<HandCollisionCallbacks>().OnEnterCollisionWithOther += OnBoardHitNonHand;
+    _seesawBoard.GetComponent<HandCollisionCallbacks>().OnExitCollisionWithOther += OnBoardLeftNonHand;
   }
 
   public override void Respawn() {
@@ -90,8 +93,6 @@ public class Smacking : IE101Example {
   #region PRIVATE METHODS
 
   // Success measurement
-  // If ammo has entered (but not exited) a collision with the seesaw board,
-  // and the hand collides with the seesaw board, this is treated as success.
 
   private void OnAmmoHitNonHand(GameObject ammoObj, GameObject otherObj) {
     if (otherObj == _seesawBoard) {
@@ -105,8 +106,20 @@ public class Smacking : IE101Example {
     }
   }
 
-  private void OnBoardHitHand(GameObject boardObj) {
-    if (_ammoTouchingBoard && (!HasBeenCompletedWithIE || !HasBeenCompletedWithoutIE)) {
+  private void OnBoardHitNonHand(GameObject seesawBoard, GameObject otherObj) {
+    if (otherObj == _seesawBase) {
+      _boardTouchingBase = true;
+    }
+  }
+
+  private void OnBoardLeftNonHand(GameObject seesawBoard, GameObject otherObj) {
+    if (otherObj == _seesawBase) {
+      _boardTouchingBase = false;
+    }
+  }
+
+  private void OnBoardHitHand(GameObject boardObj, float collisionSpeed) {
+    if (_ammoTouchingBoard && _boardTouchingBase && (!HasBeenCompletedWithIE || !HasBeenCompletedWithoutIE) && collisionSpeed > 1.0F) {
       StartCoroutine(DoMeasureAmmoVelocity());
     }
   }

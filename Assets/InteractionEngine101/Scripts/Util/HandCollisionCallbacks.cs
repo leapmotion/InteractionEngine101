@@ -16,11 +16,16 @@ public class HandCollisionCallbacks : MonoBehaviour {
   public Action<GameObject> OnExitCollisionWithHand;
   public Action<GameObject, GameObject> OnExitCollisionWithOther;
 
+  public Action<GameObject, float> OnEnterCollisionWithHandWithVelocity;
+
   void OnCollisionEnter(Collision collision) {
     if (collision.gameObject.GetComponent<InteractionBrushBone>() != null /* Interaction Brush Hands (Interaction Engine) */
       || collision.gameObject.GetComponentInParent<RigidHand>() != null /* Rigid Hands (non-Interaction Engine) */) {
       if (OnEnterCollisionWithHand != null) {
         OnEnterCollisionWithHand(gameObject);
+      }
+      if (OnEnterCollisionWithHandWithVelocity != null) {
+        OnEnterCollisionWithHandWithVelocity(gameObject, collision.relativeVelocity.magnitude);
       }
     }
     else {

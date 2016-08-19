@@ -10,7 +10,15 @@ using UnityEditor;
 #endif
 
 namespace Leap.Unity.Interaction {
-  /** Collision brushes */
+  /** 
+  * A physics IHandModel implementation that works with the Interaction Engine to 
+  * provide natural and subtle interaction between hands and physically
+  * simulated virtual objects. 
+  *
+  * Use the InteractionBrushHand models when using the Interaction Engine instead of the 
+  * other physics hand models.
+  * @since 4.1.3
+  */
   public class InteractionBrushHand : IHandModel {
     private const int N_FINGERS = 5;
     private const int N_ACTIVE_BONES = 3;
@@ -22,32 +30,43 @@ namespace Leap.Unity.Interaction {
     private GameObject _handParent;
     public GameObject GetHandParent() { return _handParent; }
 
+    /** The model type. An InteractionBrushHand is a type of physics model. */
     public override ModelType HandModelType {
       get { return ModelType.Physics; }
     }
 
+    /** The InteractionManager that manages this hand model for the Interaction Engine. */
     [SerializeField]
     private InteractionManager _manager;
 
     [SerializeField]
     private Chirality handedness;
+    /** Whether this model can be used to represent a right or a left hand.*/
     public override Chirality Handedness {
       get { return handedness; }
       set { handedness = value; }
     }
 
+    /** The physics mass value used for each bone in the hand when running the interaction simulation. */
     [SerializeField]
     private float _perBoneMass = 1.0f;
 
+    /** The collision detection mode to use for this hand model when running physics simulations. */
     [SerializeField]
     private CollisionDetectionMode _collisionDetection = CollisionDetectionMode.ContinuousDynamic;
 
+    /** The Unity PhysicsMaterial to use for this hand model when running physics simulation.
+    * The material's Bounciness must be zero and its Bounce Combine setting must be Minimum.
+    */
     [SerializeField]
     private PhysicMaterial _material = null;
 
+    /** Gets the Leap.Hand object whose data is used to update this model. */
     public override Hand GetLeapHand() { return _hand; }
+    /** Sets the Leap.Hand object to use to update this model. */
     public override void SetLeapHand(Hand hand) { _hand = hand; }
 
+    /** Initializes this hand model. */
     public override void InitHand() {
       base.InitHand();
 
@@ -56,6 +75,7 @@ namespace Leap.Unity.Interaction {
       }
     }
 
+    /** Start using this hand model to represent a tracked hand. */
     public override void BeginHand() {
       base.BeginHand();
 
@@ -68,6 +88,8 @@ namespace Leap.Unity.Interaction {
       if (_material == null || _material.bounciness != 0.0f || _material.bounceCombine != PhysicMaterialCombine.Minimum) {
         Debug.LogError("An InteractionBrushHand must have a material with 0 bounciness and a bounceCombine of Minimum.  Name: " + gameObject.name);
       }
+
+      checkContactState();
 #endif
 
       _handParent = new GameObject(gameObject.name);
@@ -113,10 +135,12 @@ namespace Leap.Unity.Interaction {
       }
     }
 
+    /** Updates this hand model. */
     public override void UpdateHand() {
 #if UNITY_EDITOR
-      if (!EditorApplication.isPlaying)
+      if (!EditorApplication.isPlaying) {
         return;
+      }
 #endif
 
       float deadzone = DEAD_ZONE_FRACTION * _hand.Fingers[1].Bone((Bone.BoneType)1).Width;
@@ -158,6 +182,7 @@ namespace Leap.Unity.Interaction {
       }
     }
 
+    /** Cleans up this hand model when it no longer actively represents a tracked hand. */
     public override void FinishHand() {
       for (int i = _brushBones.Length; i-- != 0;) {
         GameObject.Destroy(_brushBones[i].gameObject);
@@ -166,6 +191,15 @@ namespace Leap.Unity.Interaction {
       _brushBones = null;
 
       base.FinishHand();
+    }
+
+    private void checkContactState() {
+      if (Application.isPlaying && !_manager.ContactEnabled) {
+        Debug.LogError("Brush hand was created even though contact is disabled!  " +
+                       "Make sure the brush group name of the Interaction Manager matches " +
+                       "the actual name of the model group.");
+        return;
+      }
     }
   }
 }

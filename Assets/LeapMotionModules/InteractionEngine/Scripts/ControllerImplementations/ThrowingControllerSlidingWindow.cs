@@ -5,18 +5,26 @@ using System;
 
 namespace Leap.Unity.Interaction {
 
+  /**
+  * The ThrowingControllerSlidingWindow class averages the object's velocity
+  * over the specified window and applies it to the object when released.
+  * @since 4.1.4
+  */
   public class ThrowingControllerSlidingWindow : IThrowingController {
 
+    /** The length of the averaging window in seconds. */
     [Tooltip("How long the averaging window is in seconds.")]
     [SerializeField]
     private float _windowLength = 0.05f;
 
+    /** The delay between the averaging window and the current time. */
     [Tooltip("The delay between the averaging window and the current time.")]
     [SerializeField]
     private float _windowDelay = 0.02f;
 
+    [Tooltip("X axis is the speed of the released object.  Y axis is the value to multiply the speed by.")]
     [SerializeField]
-    private AnimationCurve _velocityScaleCurve = new AnimationCurve(new Keyframe(0, 1, 0, 0),
+    private AnimationCurve _velocityMultiplierCurve = new AnimationCurve(new Keyframe(0, 1, 0, 0),
                                                                     new Keyframe(3, 1.5f, 0, 0));
 
     private struct VelocitySample {
@@ -40,6 +48,7 @@ namespace Leap.Unity.Interaction {
 
     private Queue<VelocitySample> _velocityQueue = new Queue<VelocitySample>();
 
+    /** Samples the current velocity and adds it to the rolling average. */
     public override void OnHold(ReadonlyList<Hand> hands) {
       _velocityQueue.Enqueue(new VelocitySample(_obj.warper.RigidbodyPosition, _obj.warper.RigidbodyRotation, Time.fixedTime));
 
@@ -55,6 +64,7 @@ namespace Leap.Unity.Interaction {
       }
     }
 
+    /** Transfers the averaged velocity to the released object. */
     public override void OnThrow(Hand throwingHand) {
       if (_velocityQueue.Count < 2) {
         _obj.rigidbody.velocity = Vector3.zero;
@@ -98,7 +108,7 @@ namespace Leap.Unity.Interaction {
       _obj.rigidbody.velocity = PhysicsUtility.ToLinearVelocity(start.position, end.position, _windowLength);
       _obj.rigidbody.angularVelocity = PhysicsUtility.ToAngularVelocity(start.rotation, end.rotation, _windowLength);
 
-      _obj.rigidbody.velocity *= _velocityScaleCurve.Evaluate(_obj.rigidbody.velocity.magnitude);
+      _obj.rigidbody.velocity *= _velocityMultiplierCurve.Evaluate(_obj.rigidbody.velocity.magnitude);
     }
   }
 }

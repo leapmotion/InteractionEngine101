@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using Leap.Unity.RuntimeGizmos;
 using Leap.Unity.Interaction.CApi;
+using Leap.Unity.Attributes;
 
 namespace Leap.Unity.Interaction {
 
@@ -33,8 +34,13 @@ namespace Leap.Unity.Interaction {
   /// </remarks>
   public partial class InteractionManager : MonoBehaviour {
     #region SERIALIZED FIELDS
+    [AutoFind]
     [SerializeField]
     protected LeapProvider _leapProvider;
+
+    [AutoFind]
+    [SerializeField]
+    protected HandPool _handPool;
 
     [Tooltip("The streaming asset subpath of the ldat engine.")]
     [SerializeField]
@@ -44,6 +50,10 @@ namespace Leap.Unity.Interaction {
     [Tooltip("The default Interaction Material to use for Interaction Behaviours if none is specified, or for Interaction Behaviours created via scripting.")]
     [SerializeField]
     protected InteractionMaterial _defaultInteractionMaterial;
+
+    [Tooltip("The name of the model group of the Hand Pool containing the brush hands.")]
+    [SerializeField]
+    protected string _brushGroupName = "BrushHands";
 
     [Tooltip("Allow the Interaction Engine to modify object velocities when pushing.")]
     [SerializeField]
@@ -89,10 +99,6 @@ namespace Leap.Unity.Interaction {
     [Tooltip("Automatically validate integrity of simulation state each frame.  Can cause slowdown, but is always compiled out for release builds.")]
     [SerializeField]
     protected bool _automaticValidation = false;
-
-    [Tooltip("Allows simulation to be disabled without destroying the scene in any way.")]
-    [SerializeField]
-    protected bool _pauseSimulation = false;
 
     [Tooltip("Shows the debug visualization coming from the internal Interaction plugin.")]
     [SerializeField]
@@ -148,7 +154,7 @@ namespace Leap.Unity.Interaction {
     public Action OnPostPhysicalUpdate;
 
     /// <summary>
-    /// Gets the current debug flags for this manager.
+    /// Gets the current set of debug flags for this manager.
     /// </summary>
     public virtual DebugFlags DebugFlags {
       get {
@@ -250,8 +256,16 @@ namespace Leap.Unity.Interaction {
       set {
         if (_contactEnabled != value) {
           _contactEnabled = value;
+
+          if (_handPool != null) {
+            if (_contactEnabled) {
+              _handPool.EnableGroup(_brushGroupName);
+            } else {
+              _handPool.DisableGroup(_brushGroupName);
+            }
+          }
+
           UpdateSceneInfo();
-          Physics.IgnoreLayerCollision(_brushLayer, _interactionLayer, !_contactEnabled);
         }
       }
     }
@@ -585,6 +599,14 @@ namespace Leap.Unity.Interaction {
       _activityManager.MaxDepth = _maxActivationDepth;
       _activityManager.OnActivate += createInteractionShape;
       _activityManager.OnDeactivate += destroyInteractionShape;
+
+      if (_handPool != null) {
+        if (_contactEnabled) {
+          _handPool.EnableGroup(_brushGroupName);
+        } else {
+          _handPool.DisableGroup(_brushGroupName);
+        }
+      }
     }
 
     protected virtual void OnDisable() {
@@ -620,9 +642,7 @@ namespace Leap.Unity.Interaction {
         OnPrePhysicalUpdate();
       }
 
-      if (!_pauseSimulation) {
-        simulateFrame(frame);
-      }
+      simulateFrame(frame);
 
       if (OnPostPhysicalUpdate != null) {
         OnPostPhysicalUpdate();
@@ -646,10 +666,6 @@ namespace Leap.Unity.Interaction {
     }
 
     protected virtual void LateUpdate() {
-      if (_pauseSimulation) {
-        return;
-      }
-
       Frame frame = _leapProvider.CurrentFrame;
 
       dispatchOnHandsHoldingAll(frame, isPhysics: false);
@@ -726,10 +742,8 @@ namespace Leap.Unity.Interaction {
         Physics.IgnoreLayerCollision(_brushLayer, i, true);
       }
 
-      //After copy and set we specify the interactions between the brush and interaction objects
-      if (_contactEnabled) {
-        Physics.IgnoreLayerCollision(_brushLayer, _interactionLayer, false);
-      }
+      //After copy and set we enable the interaction between the brushes and interaction objects
+      Physics.IgnoreLayerCollision(_brushLayer, _interactionLayer, false);
     }
 
     protected virtual void simulateFrame(Frame frame) {

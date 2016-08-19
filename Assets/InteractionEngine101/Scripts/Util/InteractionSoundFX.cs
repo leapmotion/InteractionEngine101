@@ -88,7 +88,7 @@ public class InteractionSoundFX : MonoBehaviour {
 
       // Play a sound when we hit something.
       float collisionSpeed = collision.relativeVelocity.magnitude;
-      float collisionFXVolume = Mathf.Lerp(0F, 0.7F, (collisionSpeed - 0.5F) / 15F);
+      float collisionFXVolume = Mathf.Lerp(0F, 0.8F, (collisionSpeed - 0.5F) / 13F);
 
       // If the other collider is also an InteractionSoundFX, cut the volume of the FX in half
       // (Lazy/imperfect way to prevent doubly-loud audio on InteractionSoundFX-InteractionSoundFX collisions.)
