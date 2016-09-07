@@ -40,7 +40,7 @@ public class Smushing : IE101Example {
       _blocksTouched[i] = false;
     }
 
-      SpawnCube(0);
+    SpawnCube(0);
     SpawnCube(1);
     SpawnCube(2);
     SpawnCube(3);
@@ -78,6 +78,7 @@ public class Smushing : IE101Example {
 
   private void SpawnCube(int cubeIdx) {
     _cubes[cubeIdx] = _story._blockSpawner.Spawn();
+    _cubes[cubeIdx].GetComponent<Rigidbody>().mass = _story._blockSpawner.DefaultBlockMass * 0.32F; // Tweak block mass for good stack behaviour
     _cubes[cubeIdx].transform.localScale = Vector3.one * _cubeScales[cubeIdx];
     _cubes[cubeIdx].transform.position = _cubeSpawnPositions[cubeIdx];
     _cubes[cubeIdx].AddComponent<InteractionBehaviour>();
