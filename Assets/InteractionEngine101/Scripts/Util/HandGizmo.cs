@@ -40,10 +40,10 @@ public class HandGizmo : MonoBehaviour, IRuntimeGizmoComponent {
     }
     drawer.color = _curInteractionHandColor;
     if (_interactionHandL.IsTracked) {
-      drawer.DrawColliders(_interactionHandL.GetHandParent());
+      drawer.DrawColliders(_interactionHandL.HandParent);
     }
     if (_interactionHandR.IsTracked) {
-      drawer.DrawColliders(_interactionHandR.GetHandParent());
+      drawer.DrawColliders(_interactionHandR.HandParent);
     }
   }
 

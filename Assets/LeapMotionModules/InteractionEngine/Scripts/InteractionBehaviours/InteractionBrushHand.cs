@@ -28,7 +28,7 @@ namespace Leap.Unity.Interaction {
     private InteractionBrushBone[] _brushBones;
     private Hand _hand;
     private GameObject _handParent;
-    public GameObject GetHandParent() { return _handParent; }
+    public GameObject HandParent { get { return _handParent; } }
 
     /** The model type. An InteractionBrushHand is a type of physics model. */
     public override ModelType HandModelType {
