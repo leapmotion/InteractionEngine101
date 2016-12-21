@@ -63,10 +63,6 @@ namespace Leap.Unity.Interaction {
     [SerializeField]
     protected bool _graspingEnabled = true;
 
-    [Tooltip("Depth before collision response becomes as if holding a sphere.")]
-    [SerializeField]
-    protected float _depthUntilSphericalInside = 0.023f;
-
     [Tooltip("Objects within this radius of a hand will be considered for interaction.")]
     [SerializeField]
     protected float _activationRadius = 0.15f;
@@ -76,6 +72,7 @@ namespace Leap.Unity.Interaction {
     protected int _maxActivationDepth = 3;
 
     [Header("Layer Settings")]
+    [Tooltip("Whether or not to create the layers used for interaction when the scene runs.")]
     [SerializeField]
     protected bool _autoGenerateLayers = false;
 
@@ -286,19 +283,6 @@ namespace Leap.Unity.Interaction {
     }
 
     /// <summary>
-    /// Depth before collision response becomes as if holding a sphere..
-    /// </summary>
-    public float DepthUntilSphericalInside {
-      get {
-        return _depthUntilSphericalInside;
-      }
-      set {
-        _depthUntilSphericalInside = value;
-        UpdateSceneInfo();
-      }
-    }
-
-    /// <summary>
     /// Gets the layer that interaction objects should be on by default.
     /// </summary>
     public int InteractionLayer {
@@ -421,7 +405,8 @@ namespace Leap.Unity.Interaction {
         return false;
       }
 
-      foreach (var interactionHand in _idToInteractionHand.Values) {
+      for (var it = _idToInteractionHand.GetEnumerator(); it.MoveNext();) {
+        var interactionHand = it.Current.Value;
         if (interactionHand.graspedObject == graspedObject) {
           if (interactionHand.isUntracked) {
             interactionHand.MarkTimeout();
@@ -512,7 +497,8 @@ namespace Leap.Unity.Interaction {
     /// </summary>
     public void UnregisterInteractionBehaviour(IInteractionBehaviour interactionBehaviour) {
       if (_graspedBehaviours.Remove(interactionBehaviour)) {
-        foreach (var interactionHand in _idToInteractionHand.Values) {
+        for (var it = _idToInteractionHand.GetEnumerator(); it.MoveNext();) {
+          var interactionHand = it.Current.Value;
           if (interactionHand.graspedObject == interactionBehaviour) {
             try {
               if (interactionHand.isUntracked) {
@@ -861,7 +847,8 @@ namespace Leap.Unity.Interaction {
 
           //First we see if there is an untracked interactionHand that can be re-connected using this one
           InteractionHand untrackedInteractionHand = null;
-          foreach (var pair in _idToInteractionHand) {
+          for (var it = _idToInteractionHand.GetEnumerator(); it.MoveNext();) {
+            var pair = it.Current;
             //If the old ieHand is untracked, and the handedness matches, we re-connect it
             if (pair.Value.isUntracked && pair.Value.hand.IsLeft == hand.IsLeft) {
               untrackedInteractionHand = pair.Value;
@@ -968,7 +955,8 @@ namespace Leap.Unity.Interaction {
       }
 
       //Loop through all ieHands to check for timeouts and loss of tracking
-      foreach (var pair in _idToInteractionHand) {
+      for (var it = _idToInteractionHand.GetEnumerator(); it.MoveNext();) {
+        var pair = it.Current;
         var id = pair.Key;
         var ieHand = pair.Value;
 
@@ -1108,11 +1096,6 @@ namespace Leap.Unity.Interaction {
       if (Physics.gravity.sqrMagnitude != 0.0f) {
         info.sceneFlags |= SceneInfoFlags.HasGravity;
         info.gravity = Physics.gravity.ToCVector();
-      }
-
-      if (_depthUntilSphericalInside > 0.0f) {
-        info.sceneFlags |= SceneInfoFlags.SphericalInside;
-        info.depthUntilSphericalInside = _depthUntilSphericalInside;
       }
 
       if (_contactEnabled) {
